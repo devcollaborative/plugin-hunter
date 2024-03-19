@@ -93,7 +93,8 @@ foreach($filtered_sites as $site) {
     foreach ($plugins as $plugin) {
       if (array_search($plugin, $active_plugins)) {
         echo color_output($green, "$plugin FOUND.\n");
-        $results[$plugin][] = $site->name;
+        $version = shell_exec("terminus wp $site->name.$env -- plugin get $plugin --field=version --skip-plugins --skip-themes --skip-packages");
+        $results[$plugin][] = $site->name . ' ' . $version;
       } else {
         echo "$plugin not found. \n";
       }
@@ -109,7 +110,7 @@ if (!empty($results)) {
   echo color_output($green, "\n\n\nSUMMARY:\n");
   foreach($results as $plugin => $plugin_results) {
     echo color_output($green, "\n$plugin appears on the following sites:\n");
-    echo implode(',', $plugin_results) . "\n";
+    echo implode('- ', $plugin_results) . "\n";
   }
 
   echo("\n");
