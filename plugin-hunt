@@ -43,7 +43,7 @@ array_shift($plugins);  //drop the first argument (script name)
 
 // Read in and validate command line arguments
 if (!empty($plugins)) {
-  $response = "Searching for installed instances of the following plugins: "
+  $response = "Searching for active instances of the following plugins: "
     . implode(', ', $plugins);
 
 } else {
@@ -58,14 +58,14 @@ $site_list = json_decode(shell_exec('terminus site:list --format=json --fields="
 
 display_step('Filtering to relevant set of sites');
 foreach($site_list as $site) {
-  if ($site->framework == "wordpress8"
+  if ($site->framework == "wordpress"
   && !$site->frozen) {
     $filtered_sites[] = $site;
   }
 }
 
 if (empty($filtered_sites)) {
-  echo color_output($red, "Sorry, no sites matching your WordPress version parameters found\n");
+  echo color_output($red, "Sorry, no WordPress sites found.\n");
   exit;
 } else {
   echo "Found " . count($filtered_sites) . " sites.\n";
@@ -81,8 +81,11 @@ foreach($filtered_sites as $site) {
     $env = 'dev';
   }
 
-  // Gets array of all active plugins.
-  $active_plugins = explode("\n", shell_exec("terminus drush $site->name.$env -- pml --status=enabled --format=string --field=name"));
+  // Gets array of all active plugins. Skips plugins & themes so wp-cli command runs quicker
+  $active_plugins = explode("\n", shell_exec("terminus wp $site->name.$env -- plugin list --status=active --format=csv --field=name --skip-update-check --skip-plugins --skip-themes --skip-packages"));
+
+  // Remove the column headers from the array.
+  array_shift($active_plugins);
 
   // An inability to get the plugin result will result in ["0" => ""]
   if (!empty($active_plugins[0])) {
