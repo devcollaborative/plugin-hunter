@@ -1,11 +1,11 @@
 {
-  "name": "devcollaborative/module-hunter",
+  "name": "devcollaborative/plugin-hunter",
   "type": "library",
-  "description": "Command line tool to easily search through all your Pantheon-hosted Drupal sites and identify active instances of a particular module.",
-  "keywords": ["terminus", "pantheon", "drupal", "d8", "d7" , "modules", "security"],
+  "description": "Command line tool to easily search through all your Pantheon-hosted WordPress sites and identify active instances of a particular plugin.",
+  "keywords": ["terminus", "pantheon", "wordpress", "plugins", "security"],
   "license": "MIT",
   "bin" : [
-    "module-hunt"
+    "plugin-hunt"
   ],
   "require": {
     "pantheon-systems/terminus": ">=1.9 || ^3.0"
