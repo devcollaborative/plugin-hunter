@@ -5,25 +5,27 @@ $step_number = 0; // For the step counter display.
 
 $site_list = []; // Stores the initial set of all the user's pantheon sites.
 $filtered_sites= []; // Filtered sites based on frozen status and version parameter
-$results = []; // Stores the subset of fitlered sites that have the designated plugin
+$results = []; // Stores the subset of filtered sites that have the designated plugin
 $error_sites = []; // Stores the subset of filtered sites where the plugin check failed.
 
 // Color codes
 $red = "\e[0;31m";
 $green = "\e[0;32m";
+$magenta = "\e[0;35m";
+$cyan = "\e[0;36m";
 
 /**
  * display_step()
  * Outputs a numbered description of the current step,
  * e.g. "1.) Checking for foo"
  *
- * @param [string] $step_description Deascription of the step
+ * @param [string] $step_description Description of the step
  *
  */
 function display_step ($step_description) {
   global $step_number;
   $step_number += 1;
-  echo $step_number . ') ' . $step_description;
+  echo "\e[0;35m" . $step_number . ') ' . $step_description . "\033[0m";
   echo "\n";
 }
 
@@ -39,24 +41,23 @@ function color_output($color, $text) {
 }
 
 $plugins = $argv;
-array_shift($plugins);  //drop the first argument (script name)
+array_shift($plugins);  // drop the first argument (script name)
 
 // Read in and validate command line arguments
 if (!empty($plugins)) {
-  $response = "Searching for active instances of the following plugins: "
-    . implode(', ', $plugins);
-
+  $response = color_output($magenta, "Searching for active instances of the following plugin(s):\n") . implode(', ', $plugins);
 } else {
   echo color_output($red, "Syntax error:") .  " plugin-hunt [plugin_name] \n";
   exit;
 }
 
-echo $response . "\n";
+echo $response . "\n\n";
 
-display_step('Getting list of pantheon sites.');
+display_step('Getting list of Pantheon sites.');
 $site_list = json_decode(shell_exec('terminus site:list --format=json --fields="name,framework,plan_name,frozen"'));
+echo "Found " . count((array) $site_list) . " sites.\n\n";
 
-display_step('Filtering to relevant set of sites');
+display_step('Filtering for WordPress sites.');
 foreach($site_list as $site) {
   if ($site->framework == "wordpress"
   && !$site->frozen) {
@@ -68,7 +69,7 @@ if (empty($filtered_sites)) {
   echo color_output($red, "Sorry, no WordPress sites found.\n");
   exit;
 } else {
-  echo "Found " . count($filtered_sites) . " sites.\n";
+  echo "Found " . count($filtered_sites) . " sites.\n\n";
 }
 
 display_step("Checking each site for the designated plugin(s).");
@@ -76,13 +77,13 @@ display_step("Checking each site for the designated plugin(s).");
 // there is no live.
 foreach($filtered_sites as $site) {
   $env = 'live';
-  echo "Checking $site->name:\n";
+  echo "Checking " . color_output($cyan, $site->name) . ":\n";
   if ($site->plan_name == "Sandbox") {
     $env = 'dev';
   }
 
-  // Gets array of all active plugins. Skips plugins & themes so wp-cli command runs quicker
-  $active_plugins = explode("\n", shell_exec("terminus wp $site->name.$env -- plugin list --status=active --format=csv --field=name --skip-update-check --skip-plugins --skip-themes --skip-packages"));
+  // Gets array of all active plugins. Skips loading stuff we don't need just to check the version.
+  $active_plugins = explode("\n", shell_exec("terminus wp $site->name.$env -- plugin list --status=active --format=csv --field=name --skip-update-check --skip-plugins --skip-themes --skip-packages 2>/dev/null"));
 
   // Remove the column headers from the array.
   array_shift($active_plugins);
@@ -92,28 +93,28 @@ foreach($filtered_sites as $site) {
     // check the array for the target plugin.
     foreach ($plugins as $plugin) {
       if (array_search($plugin, $active_plugins)) {
-        echo color_output($green, "$plugin FOUND.\n");
-        $version = shell_exec("terminus wp $site->name.$env -- plugin get $plugin --field=version --skip-plugins --skip-themes --skip-packages");
-        $results[$plugin][] = $site->name . ' ' . $version;
+        echo color_output($green, "   ✔ ") . "$plugin found\n";
+        $version = shell_exec("terminus wp $site->name.$env -- plugin get $plugin --field=version --skip-plugins --skip-themes --skip-packages 2>/dev/null");
+        $results[$plugin][] = color_output($cyan, $site->name, 20) . ' ' . $version;
       } else {
-        echo "$plugin not found. \n";
+        echo color_output($red, "   ✗ ") . "$plugin not found\n";
       }
     }
   } else {
     echo color_output($red, "Error getting plugin data:\n");
     $error_sites[] = $site->name;
   }
+
+  echo "\n";
 }
 
 // Report all sites with the target plugin installed.
 if (!empty($results)) {
-  echo color_output($green, "\n\n\nSUMMARY:\n");
+  echo color_output($magenta, "\nSUMMARY:\n");
   foreach($results as $plugin => $plugin_results) {
-    echo color_output($green, "\n$plugin appears on the following sites:\n");
-    echo implode('- ', $plugin_results) . "\n";
+    echo color_output($green, "\n$plugin") . " appears on the following sites:\n";
+    echo implode('', $plugin_results) . "\n";
   }
-
-  echo("\n");
 }
 
 // Report all sites where the plugin list could not be obtained.
