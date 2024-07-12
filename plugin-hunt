@@ -69,6 +69,13 @@ if (empty($filtered_sites)) {
   exit;
 } else {
   echo "Found " . count($filtered_sites) . " sites.\n\n";
+
+  foreach($filtered_sites as $site) {
+    $env = 'live';
+    echo "   " . $site->name . " (" . $site->framework . ")". "\n";
+  }
+
+  echo "\n";
 }
 
 display_step("Checking each site for the designated plugin(s).");
