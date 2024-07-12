@@ -54,13 +54,12 @@ if (!empty($plugins)) {
 echo $response . "\n\n";
 
 display_step('Getting list of Pantheon sites.');
-$site_list = json_decode(shell_exec('terminus site:list --format=json --fields="name,framework,plan_name,frozen"'));
+$site_list = json_decode(shell_exec('terminus site:list --org=all --format=json --fields="name,framework,plan_name,frozen"'));
 echo "Found " . count((array) $site_list) . " sites.\n\n";
 
 display_step('Filtering for WordPress sites.');
 foreach($site_list as $site) {
-  if ($site->framework == "wordpress"
-  && !$site->frozen) {
+  if (($site->framework == "wordpress" || $site->framework == "wordpress_network") && !$site->frozen) {
     $filtered_sites[] = $site;
   }
 }
