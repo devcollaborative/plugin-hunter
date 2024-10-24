@@ -91,9 +91,6 @@ foreach($filtered_sites as $site) {
   // Gets array of all active plugins. Skips loading stuff we don't need just to check the version.
   $active_plugins = explode("\n", shell_exec("terminus wp $site->name.$env -- plugin list --status=active --format=csv --field=name --skip-update-check --skip-plugins --skip-themes --skip-packages 2>/dev/null"));
 
-  // Remove the column headers from the array.
-  array_shift($active_plugins);
-
   // An inability to get the plugin result will result in ["0" => ""]
   if (!empty($active_plugins[0])) {
     // check the array for the target plugin.
